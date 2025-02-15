@@ -18,8 +18,8 @@ Route::group(['prefix'=>'backend','middleware'=>'auth'],function(){
 /*Route::resource('/backend/users', UserController::class);*/
 
 Route::get('/backend', function () {
-    return view('backend.dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+    return view('backend.index');
+})->middleware(['auth', 'verified'])->name('backend.index');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
