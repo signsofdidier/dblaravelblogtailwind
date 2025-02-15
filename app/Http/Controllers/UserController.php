@@ -8,16 +8,15 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        //
-        $users = User::all();
-        $roles = Role::all();
-        return view('backend.users.index', ['users' => $users, 'roles' => $roles]);
+        //de homepagina van mijn users
+        $users = User::with('roles')->orderBy('id', 'desc')->paginate(10);
+        //return view('backend.users.index', ['users' => $users, 'roles' => $roles]);
+        return view('backend.users.index', compact('users'));
     }
 
     /**
@@ -25,9 +24,9 @@ class UserController extends Controller
      */
     public function create()
     {
-//
-        $roles = Role::pluck('name','id')->all();
-        return view('backend.users.create',compact('roles'));
+        $roles = Role::pluck('name', 'id')->all();
+        //in mijn backend heb ik users.create
+        return view('backend.users.create', compact('roles'));
     }
 
     /**
@@ -42,25 +41,40 @@ class UserController extends Controller
             'email.unique' => 'Dit e-mailadres is al in gebruik.',
             'password.required' => 'Het wachtwoord is verplicht.',
             'password.min' => 'Het wachtwoord moet minimaal :min tekens bevatten.',
-            'role_id.required' => 'Selecteer een rol voor de gebruiker.',
+            'role_id.required' => 'Selecteer minimaal 1 rol voor de gebruiker.',
+            'role_id.*.exists' => '1 van de geselecteerde rollen bestaat niet.',
+            'role_id.array' => 'De rollen moeten een lijst van ID\'s zijn.',
             'is_active.required' => 'Selecteer of de gebruiker actief is.',
             'photo_id.image' => 'De geüploade afbeelding moet een geldig afbeeldingsbestand zijn.',
         ];
-        // Valideer de request-gegevens
-        $validatedData = $request->validate([
+
+        //wegschrijven van de nieuwe user
+        $validatedDate = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'role_id' => 'required|exists:roles,id',
             'is_active' => 'required|in:0,1',
+            'role_id' => 'required|array|exists:roles,id',
             'password' => 'required|min:6',
-//            'photo_id' => 'nullable|image'
+            /*'photo_id' => 'nullable|image'*/
         ], $messages);
-        // Hash het wachtwoord voordat je opslaat
-        $validatedData['password'] = bcrypt($validatedData['password']);
-        // Maak de gebruiker aan
-        User::create($validatedData);
-        // Redirect naar een overzicht of geef een bericht weer
-        return redirect()->route('users.index')->with('message', 'User created successfully');
+
+        //password hashen
+        $validatedDate['password'] = bcrypt($validatedDate['password']);
+
+        //gebruiker aanmaken
+        $user = User::create([
+            'name' => $validatedDate['name'],
+            'email' => $validatedDate['email'],
+            'is_active' => $validatedDate['is_active'],
+            'password' => bcrypt($validatedDate['password']),
+        ]);
+        //array van rollen wegschrijven naar de role_user tussentabel
+        //sync doet een detach en daarna een attach in 1 keer
+        $user->roles()->sync($validatedDate['role_id']);
+
+        //redirect naar users
+        //with('message) zet in de session en maakt succes alert als de form gesubmit is
+        return redirect()->route('users.index')->with('message', 'User created successfully.');
     }
 
     /**
@@ -68,7 +82,7 @@ class UserController extends Controller
      */
     public function show(string $id)
     {
-        //
+        //weergave van 1 enkele user
     }
 
     /**
@@ -76,7 +90,7 @@ class UserController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        //weergave van 1 enkele user met de waarden opgehaald uit de database
     }
 
     /**
@@ -84,7 +98,7 @@ class UserController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        //is het overschrijven van de gewijzigde waarden uit de function edit.
     }
 
     /**
@@ -92,6 +106,6 @@ class UserController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        //delete van een user
     }
 }

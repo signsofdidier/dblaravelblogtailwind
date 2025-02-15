@@ -1,6 +1,6 @@
 @extends('layouts.backend')
 @section('title')
-    Create User
+    Create a user
 @endsection
 @section('content-top')
 @endsection
@@ -15,40 +15,68 @@
                     <h4 class="card-title">Create new user</h4>
                 </div><!--end card-header-->
                 <div class="card-body">
-                    <form method="POST" action="{{ action('App\Http\Controllers\UserController@store') }}" enctype="multipart/form-data">
-                        @csrf
+                    <form action="{{action('\App\Http\Controllers\UserController@store')}}" method="POST" enctype="multipart/form-data">
+                        @csrf {{--HEEL BELANGRIJK!!! MOET IK ELK FORMULIER--}}
                         <div class="mb-6">
                             <label for="name" class="label">Your name</label>
-                            <input type="text" id="name" class="form-control" value="{{old('name')}}">
+                            <input
+                                type="text"
+                                name="name"
+                                id="name"
+                                class="form-control"
+                                value="{{old('name')}}"{{--old onthoud de input--}}
+                            >
+                            @error('name')
+                            <p class="text-danger text-sm">{{$message}}</p>
+                            @enderror()
                         </div>
                         <div class="mb-6">
                             <label for="email" class="label">Your email</label>
-                            <input type="text" id="email" class="form-control" value="{{ old('email') }}">
+                            <input
+                                type="text"
+                                name="email"
+                                id="email"
+                                class="form-control"
+                                value="{{old('email')}}"{{--old onthoud de input--}}
+                            >
                         </div>
+
                         <div class="mb-6">
-                            <label for="role_id" class="label">Select roles:</label>
-                            <select name="role_id" id="role_id" class="form-control">
-                                @foreach($roles as $id => $role)
-                                    <option value="{{ $id }}" {{ old('role_id') == $id ? 'selected' : '' }}>
-                                        {{ $role }}
-                                    </option>
+                            <label for="role_id" class="label">Select Role</label>
+                            <select class="form-control" name="role_id[]" id="role_id" multiple>
+                                <option value="" disabled>Select Role (ctrl + click multiple)</option>
+                                {{--foreach voor associatieve array--}}
+                                @foreach($roles as $id=>$role)
+                                    <option value="{{$id}}">{{$role}}</option>
                                 @endforeach
                             </select>
                         </div>
+
+
                         <div class="mb-6">
                             <label for="is_active" class="label">Select status:</label>
-                            <select name="is_active" id="is_active" class="form-control">
-                                <option value="1" {{ old('is_active') == "1" ? 'selected' : '' }}>Active</option>
-                                <option value="0" {{ old('is_active') == "0" ? 'selected' : '' }}>Inactive</option>
+                            <select class="form-select" name="is_active" id="is_active">
+                                <option value="1" {{old('is_active' == 1 ? 'selected' : "")}}>Active</option>
+                                <option value="0" {{old('is_active' == 0 ? 'selected' : "")}}>Not Active</option>
                             </select>
                         </div>
                         <div class="mb-6">
                             <label for="password" class="label">Your password</label>
-                            <input type="password" id="password" class="form-control">
+                            <input
+                                type="password"
+                                name="password"
+                                id="password"
+                                class="form-control"
+                            >
                         </div>
                         <div class="mb-6">
                             <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300" for="photo_id">Upload file</label>
-                            <input class="block w-full text-sm text-gray-900 bg-gray-50 rounded border border-gray-200 cursor-pointer p-1 dark:text-gray-400 focus:outline-none focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" aria-describedby="user_avatar_help" id="photo_id" name="photo_id" type="file">
+                            <input
+                                type="file"
+                                name="photo_id"
+                                id="photo_id"
+                                class="form-control"
+                            >
                             <div class="mt-1 text-sm text-gray-500 dark:text-gray-300" id="user_avatar_help">A profile picture is useful to confirm your are logged into your account</div>
                         </div>
                         <button type="submit" class="btn bg-blue-500 text-white hover:bg-blue-600">Create User</button>

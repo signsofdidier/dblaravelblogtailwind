@@ -35,6 +35,7 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+    // 1. Definieer validatieberichten
         $messages = [
             'name.required' => 'De naam is verplicht.',
             'email.required' => 'Het e-mailadres is verplicht.',
@@ -42,7 +43,9 @@ class UserController extends Controller
             'email.unique' => 'Dit e-mailadres is al in gebruik.',
             'password.required' => 'Het wachtwoord is verplicht.',
             'password.min' => 'Het wachtwoord moet minimaal :min tekens bevatten.',
-            'role_id.required' => 'Selecteer een rol voor de gebruiker.',
+            'role_id.required' => 'Selecteer minimaal één rol.',
+            'role_id.array' => 'De rollen moeten een lijst van ID\'s zijn.',
+            'role_id.*.exists' => 'Een van de geselecteerde rollen bestaat niet.',
             'is_active.required' => 'Selecteer of de gebruiker actief is.',
             'photo_id.image' => 'De geüploade afbeelding moet een geldig afbeeldingsbestand zijn.',
         ];
@@ -50,15 +53,27 @@ class UserController extends Controller
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'role_id' => 'required|exists:roles,id',
+            'role_id' => 'required|array', // Moet nu een array zijn
+            'role_id.*' => 'exists:roles,id', // Elke rol in de array moet geldig zijn
             'is_active' => 'required|in:0,1',
             'password' => 'required|min:6',
             'photo_id' => 'nullable|image'
         ], $messages);
+
         // Hash het wachtwoord voordat je opslaat
         $validatedData['password'] = bcrypt($validatedData['password']);
-        // Maak de gebruiker aan
-        User::create($validatedData);
+        // Maak de gebruiker aan ZONDER role id
+
+        $user = User::create([
+            'name' => $validatedData['name'],
+            'email' => $validatedData['email'],
+            'is_active' => $validatedData['is_active'],
+            'password' => $validatedData['password'],
+        ]);
+
+        // Koppel de gebruiker aan de geselecteerde rollen
+        $user->roles()->sync($validatedData['role_id']);
+
         // Redirect naar een overzicht of geef een bericht weer
         return redirect()->route('users.index')->with('message', 'User created successfully');
     }
